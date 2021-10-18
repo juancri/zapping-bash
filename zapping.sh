@@ -29,8 +29,8 @@ fi
 if [ -z "$ZAPPING_TOKEN" ];
 then
 	# Login
-	read -p "Email: " ZAPPING_EMAIL
-	read -p "Password: " ZAPPING_PASS
+	read -p "Email: " -r ZAPPING_EMAIL
+	read -p "Password: " -r ZAPPING_PASS
 	echo "Logging in..."
 	LOGIN_RESPONSE=$(http -f \
 	  https://api.zappingtv.com/v16/android/users/login/email \
