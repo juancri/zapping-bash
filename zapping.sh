@@ -26,12 +26,12 @@ fi
 readarray() {
 	local __resultvar=$1
 	declare -a __local_array
-	let i=0
+	(( i = 0 )) || true
 	while IFS=$'\n' read -r line_data; do
 		#__local_array[i]=${line_data}
 		eval "${__resultvar}[${i}]=\"${line_data}\""
 		((++i))
-	done < $2
+	done < "${2}"
 }
 
 # Load token from file?
