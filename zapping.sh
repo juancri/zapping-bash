@@ -2,6 +2,7 @@
 
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
+CHANNELS_FILE="${HOME}/.config/zapping.channels"
 
 # Check dependencies
 if ! command -v mpv &> /dev/null
@@ -19,6 +20,19 @@ then
 	echo "This script requires HTTPie"
 	exit
 fi
+
+# Pollyfill
+# MacOS does not support readarray
+readarray() {
+	local __resultvar=$1
+	declare -a __local_array
+	let i=0
+	while IFS=$'\n' read -r line_data; do
+		#__local_array[i]=${line_data}
+		eval "${__resultvar}[${i}]=\"${line_data}\""
+		((++i))
+	done < $2
+}
 
 # Load token from file?
 if [ -f "${CONFIG_FILE}" ]
@@ -62,10 +76,10 @@ CHANNEL_LIST_RESPONSE=$(http -f \
   token="${ZAPPING_TOKEN}")
 
 # Choose channel
-echo "${CHANNEL_LIST_RESPONSE}" > /tmp/channels.json
 PS3='Select channel: '
-CHANNEL_NAMES_JQ=$(echo "${CHANNEL_LIST_RESPONSE}" | jq '(.data[])' | jq -r .name | sort)
-readarray -t CHANNEL_NAMES <<< "${CHANNEL_NAMES_JQ}"
+echo "${CHANNEL_LIST_RESPONSE}" | jq '(.data[])' | jq -r .name | sort > "${CHANNELS_FILE}"
+readarray CHANNEL_NAMES "${CHANNELS_FILE}"
+echo "first channel: ${CHANNEL_NAMES[0]}"
 select CHANNEL_NAME in "${CHANNEL_NAMES[@]}"
 do
 	# Play
