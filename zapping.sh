@@ -20,6 +20,11 @@ then
 	echo "This script requires HTTPie"
 	exit
 fi
+if ! command -v uuidgen &> /dev/null
+then
+	echo "This script requires uuidgen"
+	exit
+fi
 
 # Pollyfill
 # MacOS does not support readarray
@@ -28,7 +33,6 @@ readarray() {
 	declare -a __local_array
 	(( i = 0 )) || true
 	while IFS=$'\n' read -r line_data; do
-		#__local_array[i]=${line_data}
 		eval "${__resultvar}[${i}]=\"${line_data}\""
 		((++i))
 	done < "${2}"
@@ -43,35 +47,46 @@ fi
 if [ -z "$ZAPPING_TOKEN" ];
 then
 	# Login
-	read -p "Email: " -r ZAPPING_EMAIL
-	read -p "Password: " -r ZAPPING_PASS
 	echo "Logging in..."
-	LOGIN_RESPONSE=$(http -f \
-	  https://api.zappingtv.com/v16/android/users/login/email \
-	  email="${ZAPPING_EMAIL}" \
-	  password="${ZAPPING_PASS}")
-	ZAPPING_USER_ID=$(echo "${LOGIN_RESPONSE}" | jq -r .data.id)
+	UUID=$(uuidgen)
+	GETCODE_RESPONSE=$(http -f \
+	  https://meteoro.zappingtv.com/activation/V20/androidtv/getcode \
+	  uuid="${UUID}" \
+	  acquisition="Android TV")
+	CODE=$(echo "${GETCODE_RESPONSE}" | jq -r .data.code)
+	echo "Visit https://app.zappingtv.com/smart"
+	echo "Code: ${CODE}"
+	read -p "Pres [ENTER] to continue..."
 
-	# Get token
-	echo "Getting token..."
-	TOKEN_RESPONSE=$(http -f \
-	  https://api.zappingtv.com/v16/android/users/getWebToken \
-	  email="${ZAPPING_EMAIL}" \
-	  password="${ZAPPING_PASS}" \
-	  userID="${ZAPPING_USER_ID}")
-	ZAPPING_TOKEN=$(echo "${TOKEN_RESPONSE}" | jq -r .data)
+	# Check code
+	echo "Checking if the code is linked..."
+	CHECKCODE_RESPONSE=$(http -f \
+	  https://meteoro.zappingtv.com/activation/V20/androidtv/linked \
+	  code="${CODE}")
+	CHECKCODE_STATUS=$(echo "${CHECKCODE_RESPONSE}" | jq -r .status)
+	ZAPPING_TOKEN=$(echo "${CHECKCODE_RESPONSE}" | jq -r .data.data)
+	echo "Status: ${CHECKCODE_STATUS} Token: ${ZAPPING_TOKEN}"
 
 	# Save token
 	echo "Saving token to ${CONFIG_FILE}..."
 	echo "${ZAPPING_TOKEN}" > "${CONFIG_FILE}"
 fi
 
+# Get play token
+echo "Getting play token..."
+UUID=$(uuidgen)
+DRHOUSE_RESPONSE=$(http -f \
+  https://drhouse.zappingtv.com/login/V20/androidtv/ \
+  token="${ZAPPING_TOKEN}" \
+  uuid="${UUID}")
+PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
+
 # Get channel list
 echo "Getting channel list..."
 CHANNEL_LIST_RESPONSE=$(http -f \
-  https://alquinta.zappingtv.com/v20/android/channelsforuser/ \
+  https://alquinta.zappingtv.com/v20/androidtv/channelswithurl/ \
   quality=auto \
-  hevc=1 \
+  hevc=0 \
   is3g=0 \
   token="${ZAPPING_TOKEN}")
 
@@ -82,16 +97,19 @@ readarray CHANNEL_NAMES "${CHANNELS_FILE}"
 echo "first channel: ${CHANNEL_NAMES[0]}"
 select CHANNEL_NAME in "${CHANNEL_NAMES[@]}"
 do
+	# Send heartbeat
+	echo "Sending heartbeat..."
+	http -f https://drhouse.zappingtv.com/hb/v1/androidtv/ \
+	  playtoken="${PLAY_TOKEN}" > /dev/null
+
 	# Play
 	echo "Playing channel: ${CHANNEL_NAME}..."
-	CHANNEL_ID=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .id")
-	PLAY_CHANNEL_RESPONSE=$(http -f https://alquinta.zappingtv.com/v10/atv/playcanal \
-	  media="${CHANNEL_ID}" \
-	  token="${ZAPPING_TOKEN}" \
-	  sub=0 \
-	  qlty=auto \
-	  is3g=0 \
-	  hevc=1)
-	PLAY_URL=$(echo "${PLAY_CHANNEL_RESPONSE}" | jq -r .data.href)
-	mpv "${PLAY_URL}" > /dev/null 2>&1
+	STREAM_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
+	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}"
+	ffmpeg \
+	  -user_agent "HTTPie/3.2.1" \
+	  -i "${PLAY_URL}" \
+	  -c:a copy \
+	  -c:v copy \
+	  -f mpegts - | mpv -
 done
