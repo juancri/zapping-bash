@@ -111,9 +111,11 @@ do
 	# Play
 	echo "Playing channel: ${CHANNEL_NAME}..."
 	STREAM_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
-	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}&startTime=1657815766"
+	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}"
+	echo "Play url: ${PLAY_URL}"
 	ffmpeg \
 	  -user_agent "${USER_AGENT}" \
+	  -live_start_index -99999 \
 	  -i "${PLAY_URL}" \
 	  -c:a copy \
 	  -c:v copy \
