@@ -3,6 +3,7 @@
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
 CHANNELS_FILE="${HOME}/.config/zapping.channels"
+USER_AGENT="Zapping/bash-1.0"
 
 # Check dependencies
 if ! command -v mpv &> /dev/null
@@ -52,7 +53,8 @@ then
 	GETCODE_RESPONSE=$(http -f \
 	  https://meteoro.zappingtv.com/activation/V20/androidtv/getcode \
 	  uuid="${UUID}" \
-	  acquisition="Android TV")
+	  acquisition="Android TV" \
+	  User-Agent:"${USER_AGENT}")
 	CODE=$(echo "${GETCODE_RESPONSE}" | jq -r .data.code)
 	echo "Visit https://app.zappingtv.com/smart"
 	echo "Code: ${CODE}"
@@ -62,7 +64,8 @@ then
 	echo "Checking if the code is linked..."
 	CHECKCODE_RESPONSE=$(http -f \
 	  https://meteoro.zappingtv.com/activation/V20/androidtv/linked \
-	  code="${CODE}")
+	  code="${CODE}" \
+	  User-Agent:"${USER_AGENT}")
 	CHECKCODE_STATUS=$(echo "${CHECKCODE_RESPONSE}" | jq -r .status)
 	ZAPPING_TOKEN=$(echo "${CHECKCODE_RESPONSE}" | jq -r .data.data)
 	echo "Status: ${CHECKCODE_STATUS} Token: ${ZAPPING_TOKEN}"
@@ -78,7 +81,8 @@ UUID=$(uuidgen)
 DRHOUSE_RESPONSE=$(http -f \
   https://drhouse.zappingtv.com/login/V20/androidtv/ \
   token="${ZAPPING_TOKEN}" \
-  uuid="${UUID}")
+  uuid="${UUID}" \
+  User-Agent:"${USER_AGENT}")
 PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
 
 # Get channel list
@@ -88,7 +92,8 @@ CHANNEL_LIST_RESPONSE=$(http -f \
   quality=auto \
   hevc=0 \
   is3g=0 \
-  token="${ZAPPING_TOKEN}")
+  token="${ZAPPING_TOKEN}" \
+  User-Agent:"${USER_AGENT}")
 
 # Choose channel
 PS3='Select channel: '
@@ -100,14 +105,15 @@ do
 	# Send heartbeat
 	echo "Sending heartbeat..."
 	http -f https://drhouse.zappingtv.com/hb/v1/androidtv/ \
-	  playtoken="${PLAY_TOKEN}" > /dev/null
+	  playtoken="${PLAY_TOKEN}" \
+	  User-Agent:"${USER_AGENT}" > /dev/null
 
 	# Play
 	echo "Playing channel: ${CHANNEL_NAME}..."
 	STREAM_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
-	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}"
+	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}&startTime=1657815766"
 	ffmpeg \
-	  -user_agent "HTTPie/3.2.1" \
+	  -user_agent "${USER_AGENT}" \
 	  -i "${PLAY_URL}" \
 	  -c:a copy \
 	  -c:v copy \
