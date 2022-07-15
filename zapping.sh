@@ -102,6 +102,28 @@ readarray CHANNEL_NAMES "${CHANNELS_FILE}"
 echo "first channel: ${CHANNEL_NAMES[0]}"
 select CHANNEL_NAME in "${CHANNEL_NAMES[@]}"
 do
+	# Live / VOD?
+	echo "${CHANNEL_NAME}"
+	read -p "Play [L]ive, [V]od or [T]ime? (default: Live) " TIME_PLAY_OPTION
+	PLAY_EXTRA=""
+	case $TIME_PLAY_OPTION in
+		V | v)
+			echo "Vod"
+			echo "not implemented! playing live"
+			PLAY_EXTRA=""
+			;;
+		T | t)
+			read -p "How many minutes back? " MINUTES_BACK
+			TIMESTAMP=$(date +%s)
+			START_TIME=$(expr $TIMESTAMP - $MINUTES_BACK '*' 60)
+			echo "timestamp ${TIMESTAMP} startTime ${START_TIME}"
+			PLAY_EXTRA="&startTime=${START_TIME}"
+			;;
+		L | *)
+			echo "Live"
+			;;
+	esac
+
 	# Send heartbeat
 	echo "Sending heartbeat..."
 	http -f https://drhouse.zappingtv.com/hb/v1/androidtv/ \
@@ -111,7 +133,7 @@ do
 	# Play
 	echo "Playing channel: ${CHANNEL_NAME}..."
 	STREAM_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
-	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}"
+	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
 	echo "Play url: ${PLAY_URL}"
 	ffmpeg \
 	  -user_agent "${USER_AGENT}" \
