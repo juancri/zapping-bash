@@ -165,7 +165,6 @@ do
 	then
 		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
 	fi
-	echo "Play url: ${PLAY_URL}"
 	mpv \
 	  --user-agent="${USER_AGENT}" \
 	  --demuxer-lavf-o=live_start_index=-99999 \
