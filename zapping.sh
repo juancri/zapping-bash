@@ -92,7 +92,7 @@ echo "Getting channel list..."
 CHANNEL_LIST_RESPONSE=$(http -f \
   https://alquinta.zappingtv.com/v20/androidtv/channelswithurl/ \
   quality=auto \
-  hevc=0 \
+  hevc=1 \
   is3g=0 \
   token="${ZAPPING_TOKEN}" \
   User-Agent:"${USER_AGENT}")
