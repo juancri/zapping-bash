@@ -113,10 +113,9 @@ do
 			PLAY_EXTRA=""
 			;;
 		T | t)
-			read -r -p "How many minutes back? " MINUTES_BACK
-			TIMESTAMP=$(date +%s)
-			START_TIME=$(( "$TIMESTAMP - $MINUTES_BACK * 60" ))
-			echo "timestamp ${TIMESTAMP} startTime ${START_TIME}"
+			read -r -p "How much time back (example: 20 minute)? " TIME_BACK
+			START_TIME=$(date -d"-${TIME_BACK}" +%s)
+			echo "startTime ${START_TIME}"
 			PLAY_EXTRA="&startTime=${START_TIME}"
 			;;
 		L | *)
