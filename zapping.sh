@@ -58,7 +58,7 @@ then
 	CODE=$(echo "${GETCODE_RESPONSE}" | jq -r .data.code)
 	echo "Visit https://app.zappingtv.com/smart"
 	echo "Code: ${CODE}"
-	read -p "Pres [ENTER] to continue..."
+	read -r -p "Pres [ENTER] to continue..."
 
 	# Check code
 	echo "Checking if the code is linked..."
@@ -104,7 +104,7 @@ select CHANNEL_NAME in "${CHANNEL_NAMES[@]}"
 do
 	# Live / VOD?
 	echo "${CHANNEL_NAME}"
-	read -p "Play [L]ive, [V]od or [T]ime? (default: Live) " TIME_PLAY_OPTION
+	read -r -p "Play [L]ive, [V]od or [T]ime? (default: Live) " TIME_PLAY_OPTION
 	PLAY_EXTRA=""
 	case $TIME_PLAY_OPTION in
 		V | v)
@@ -113,9 +113,9 @@ do
 			PLAY_EXTRA=""
 			;;
 		T | t)
-			read -p "How many minutes back? " MINUTES_BACK
+			read -r -p "How many minutes back? " MINUTES_BACK
 			TIMESTAMP=$(date +%s)
-			START_TIME=$(expr $TIMESTAMP - $MINUTES_BACK '*' 60)
+			START_TIME=$(( "$TIMESTAMP - $MINUTES_BACK * 60" ))
 			echo "timestamp ${TIMESTAMP} startTime ${START_TIME}"
 			PLAY_EXTRA="&startTime=${START_TIME}"
 			;;
