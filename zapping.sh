@@ -135,11 +135,9 @@ do
 	STREAM_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
 	PLAY_URL="${STREAM_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
 	echo "Play url: ${PLAY_URL}"
-	ffmpeg \
-	  -user_agent "${USER_AGENT}" \
-	  -live_start_index -99999 \
-	  -i "${PLAY_URL}" \
-	  -c:a copy \
-	  -c:v copy \
-	  -f mpegts - | mpv -
+	mpv \
+	  --user-agent="${USER_AGENT}" \
+	  --demuxer-lavf-o=live_start_index=-99999 \
+	  --force-seekable=yes \
+	  "${PLAY_URL}"
 done
