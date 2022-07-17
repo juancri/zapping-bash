@@ -128,7 +128,7 @@ do
 				PS3='Select card: '
 				select CARD_NAME in "${CARDS[@]}"
 				do
-					echo "Playing ${CARD_NAME}..."
+					echo "${CHANNEL_NAME}: ${CARD_NAME}"
 					CARD_INDEX=$(( REPLY - 1 ))
 					START_TIME=${CARDS_START_TIMESTAMPS[$CARD_INDEX]}
 					END_TIME=${CARDS_END_TIMESTAMPS[$CARD_INDEX]}
@@ -140,10 +140,10 @@ do
 		T | t)
 			read -r -p "How much time back (example: 20 minute)? " TIME_BACK
 			START_TIME=$(date -d"-${TIME_BACK}" +%s)
-			echo "Playing from ${START_TIME}..."
+			echo "${CHANNEL_NAME}: -${TIME_BACK}"
 			;;
 		L | *)
-			echo "Playing live..."
+			echo "${CHANNEL_NAME}: Live"
 			;;
 	esac
 
@@ -154,7 +154,6 @@ do
 	  User-Agent:"${USER_AGENT}" > /dev/null
 
 	# Play
-	echo "Playing channel: ${CHANNEL_NAME}..."
 	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
 	PLAY_URL="${PLAY_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
 	if [ -n "${START_TIME}"  ]
@@ -165,6 +164,7 @@ do
 	then
 		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
 	fi
+	echo "Playing..."
 	mpv \
 	  --user-agent="${USER_AGENT}" \
 	  --demuxer-lavf-o=live_start_index=-99999 \
