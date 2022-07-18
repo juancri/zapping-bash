@@ -4,7 +4,27 @@
 CONFIG_FILE="${HOME}/.config/zapping"
 USER_AGENT="Zapping/bash-1.0"
 
+# Default
+DATE_COMMAND="date"
+
 # Check dependencies
+case $OSTYPE in
+	linux-gnu)
+		echo "OS detected: GNU+Linux"
+		;;
+	darwin)
+		echo "OS detected: macOS"
+		if ! command -v gdate &> /dev/null
+		then
+			echo "This script requires gdate"
+			exit
+		fi
+		DATE_COMMAND="gdate"
+		;;
+	*)
+		echo "WARNING: OS \"${OSTYPE}\" not supported. Trying anyways."
+		;;
+esac
 if ! command -v mpv &> /dev/null
 then
 	echo "This script requires mpv"
@@ -40,6 +60,28 @@ join_arrays() {
 		echo "${FIRST_ARRAY[$i]}" "${SECOND_ARRAY[$i]}"
 	done
 }
+
+zdate() {
+	if type -t gdate &>/dev/null
+	then
+		gdate "$@"
+	else
+		date "$@"
+	fi
+}
+
+timestamp_to_hh_mm() {
+	zdate -d "@$1"  +'%H:%M'
+}
+
+zargs() {
+	while IFS='$\n' read -r line; do
+		"$1" "$line"
+	done
+}
+
+# Export functions
+export -f timestamp_to_hh_mm
 
 # Load token from file?
 if [ -f "${CONFIG_FILE}" ]
@@ -123,7 +165,7 @@ do
 				to_array CARDS_TITLES <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].title")
 				to_array CARDS_START_TIMESTAMPS <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time")
 				to_array CARDS_END_TIMESTAMPS <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].end_time")
-				to_array CARDS_TIMES <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time" | xargs -I _ date -d @_  +'%H:%M')
+				to_array CARDS_TIMES <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time" | zargs timestamp_to_hh_mm)
 				to_array CARDS <<< "$(join_arrays CARDS_TIMES CARDS_TITLES)"
 				PS3='Select card: '
 				select CARD_NAME in "${CARDS[@]}"
@@ -139,7 +181,7 @@ do
 			;;
 		T | t)
 			read -r -p "How much time back (example: 20 minute)? " TIME_BACK
-			START_TIME=$(date -d"-${TIME_BACK}" +%s)
+			START_TIME=$(zdate -d"-${TIME_BACK}" +%s)
 			echo "${CHANNEL_NAME}: -${TIME_BACK}"
 			;;
 		L | *)
