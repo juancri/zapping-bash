@@ -1,5 +1,31 @@
 #!/bin/bash
 
+print_help() {
+	echo "Arguments:"
+	echo " -h or --help: Prints this message"
+	echo " -v or --verbose: Prints verbose messages"
+}
+
+# Read arguments
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-v|--verbose)
+			VERBOSE=1
+			shift # past argument
+			;;
+		-h|--help)
+			print_help
+			exit
+			;;
+		*)
+			echo "Unknown argument: $1"
+			print_help
+			exit
+			;;
+	esac
+done
+echo "verbose: ${VERBOSE}"
+
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
 USER_AGENT="Zapping/bash-1.0"
@@ -47,6 +73,7 @@ then
 fi
 
 # Functions
+
 to_array() {
 	IFS=$'\n' read -d '' -r -a "$1"
 }
@@ -78,6 +105,13 @@ zargs() {
 	while IFS='$\n' read -r line; do
 		"$1" "$line"
 	done
+}
+
+echo_verbose() {
+	if [ -n "${VERBOSE}" ]
+	then
+		echo $@
+	fi
 }
 
 # Export functions
@@ -122,12 +156,14 @@ fi
 # Get play token
 echo "Getting play token..."
 UUID=$(uuidgen)
+echo_verbose "UUID: ${UUID}"
 DRHOUSE_RESPONSE=$(http -f \
   https://drhouse.zappingtv.com/login/V20/androidtv/ \
   token="${ZAPPING_TOKEN}" \
   uuid="${UUID}" \
   User-Agent:"${USER_AGENT}")
 PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
+echo_verbose "Play token: ${PLAY_TOKEN}"
 
 # Get channel list
 echo "Getting channel list..."
@@ -198,15 +234,16 @@ do
 	# Play
 	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
 	PLAY_URL="${PLAY_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
-	if [ -n "${START_TIME}"  ]
+	if [ -n "${START_TIME}" ]
 	then
 		PLAY_URL="${PLAY_URL}&startTime=${START_TIME}"
 	fi
-	if [ -n "${END_TIME}"  ]
+	if [ -n "${END_TIME}" ]
 	then
 		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
 	fi
 	echo "Playing..."
+	echo_verbose "Play URL: ${PLAY_URL}"
 	mpv \
 	  --user-agent="${USER_AGENT}" \
 	  --demuxer-lavf-o=live_start_index=-99999 \
