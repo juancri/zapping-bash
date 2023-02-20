@@ -30,9 +30,6 @@ echo "verbose: ${VERBOSE}"
 CONFIG_FILE="${HOME}/.config/zapping"
 USER_AGENT="Zapping/bash-1.0"
 
-# Default
-DATE_COMMAND="date"
-
 # Check dependencies
 case $OSTYPE in
 	linux-gnu)
@@ -45,7 +42,6 @@ case $OSTYPE in
 			echo "This script requires gdate"
 			exit
 		fi
-		DATE_COMMAND="gdate"
 		;;
 	*)
 		echo "WARNING: OS \"${OSTYPE}\" not supported. Trying anyways."
@@ -102,7 +98,7 @@ timestamp_to_hh_mm() {
 }
 
 zargs() {
-	while IFS='$\n' read -r line; do
+	while IFS=$'$\n' read -r line; do
 		"$1" "$line"
 	done
 }
@@ -110,7 +106,7 @@ zargs() {
 echo_verbose() {
 	if [ -n "${VERBOSE}" ]
 	then
-		echo $@
+		echo "$@"
 	fi
 }
 
@@ -198,10 +194,10 @@ do
 			select SECTION_NAME in "${SECTION_NAMES[@]}"
 			do
 				echo "Section selected: ${SECTION_NAME}"
-				to_array CARDS_TITLES <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].title")
-				to_array CARDS_START_TIMESTAMPS <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time")
-				to_array CARDS_END_TIMESTAMPS <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].end_time")
-				to_array CARDS_TIMES <<< $(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time" | zargs timestamp_to_hh_mm)
+				to_array CARDS_TITLES <<< "$(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].title")"
+				to_array CARDS_START_TIMESTAMPS <<< "$(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time")"
+				to_array CARDS_END_TIMESTAMPS <<< "$(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].end_time")"
+				to_array CARDS_TIMES <<< "$(echo "${CATCHUP_RESPONSE}" | jq -r ".data[] | select(.title == \"${SECTION_NAME}\") | .cards[].start_time" | zargs timestamp_to_hh_mm)"
 				to_array CARDS <<< "$(join_arrays CARDS_TIMES CARDS_TITLES)"
 				PS3='Select card: '
 				select CARD_NAME in "${CARDS[@]}"
