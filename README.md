@@ -3,6 +3,8 @@
 
 Cliente de zapping.com escrito para [GNU Bash](https://www.gnu.org/software/bash/).
 
+[Watch demo](./demo.mp4)
+
 ## Licencia
 
 Este proyecto es publicado utilizando la [licencia MIT](https://es.wikipedia.org/wiki/Licencia_MIT). Puedes ver detalles en el archivo [LICENSE](./LICENSE).
