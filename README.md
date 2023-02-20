@@ -3,7 +3,7 @@
 
 Cliente de zapping.com escrito para [GNU Bash](https://www.gnu.org/software/bash/).
 
-[Watch demo](./demo.mp4)
+![demo](./demo.gif)
 
 ## Licencia
 
