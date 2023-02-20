@@ -244,9 +244,15 @@ do
 	fi
 	echo "Playing..."
 	echo_verbose "Play URL: ${PLAY_URL}"
+	MPV_VERBOSE_PARAMS=""
+	if [ -n "${VERBOSE}" ]
+	then
+		MPV_VERBOSE_PARAMS="-v"
+	fi
 	mpv \
 	  --user-agent="${USER_AGENT}" \
 	  --demuxer-lavf-o=live_start_index=-99999 \
+	  $MPV_VERBOSE_PARAMS \
 	  --force-seekable=yes \
 	  "${PLAY_URL}"
 
