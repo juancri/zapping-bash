@@ -33,11 +33,17 @@ Para funcionar, este script requiere:
 - [jq](https://stedolan.github.io/jq/)
 - [HTTPie](https://httpie.io/cli)
 - [uuidgen](https://man7.org/linux/man-pages/man1/uuidgen.1.html)
+- [ffmpeg](https://ffmpeg.org/) (solo para grabar)
 
 Para instalar las dependencias en Arch o Manjaro, puedes ejecutar:
 
 ```bash
-sudo pacman -S mpv jq httpie uuidgen util-linux
+sudo pacman -S \
+  mpv \
+  jq \
+  httpie \
+  util-linux \
+  ffmpeg
 ```
 
 ## Ejecutar
@@ -56,5 +62,6 @@ El script soporta los siguientes parámetros opcionales:
 
 - `-h`: Muestra ayuda e información sobre parámetro
 - `-v`: Habilita *verbose* que muestra detalles técnicos
+- `-r`: Graba el contenido en vez de reproducirlo. El formato del nombre del archivo es `recording-YY-MM-DD-HHmmss.ts`. Por ejemplo, `recording-2023-02-20-225701.ts`.
 
-Por ejemplo: `./zapping.sh -v`
+Por ejemplo: `./zapping.sh -v` o `./zapping.sh -r`

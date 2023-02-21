@@ -13,6 +13,10 @@ while [[ $# -gt 0 ]]; do
 			VERBOSE=1
 			shift # past argument
 			;;
+		-r|--record)
+			RECORD=1
+			shift # past argument
+			;;
 		-h|--help)
 			print_help
 			exit
@@ -25,6 +29,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 echo "verbose: ${VERBOSE}"
+echo "Record: ${RECORD}"
 
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
@@ -65,6 +70,11 @@ fi
 if ! command -v uuidgen &> /dev/null
 then
 	echo "This script requires uuidgen"
+	exit
+fi
+if [ -n "${RECORD}" ] && ! command -v ffmpeg &> /dev/null
+then
+	echo "This script requires ffmpeg to record"
 	exit
 fi
 
@@ -238,19 +248,33 @@ do
 	then
 		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
 	fi
-	echo "Playing..."
-	echo_verbose "Play URL: ${PLAY_URL}"
 	MPV_VERBOSE_PARAMS=""
 	if [ -n "${VERBOSE}" ]
 	then
 		MPV_VERBOSE_PARAMS="-v"
 	fi
-	mpv \
-	  --user-agent="${USER_AGENT}" \
-	  --demuxer-lavf-o=live_start_index=-99999 \
-	  $MPV_VERBOSE_PARAMS \
-	  --force-seekable=yes \
-	  "${PLAY_URL}"
+
+	if [ -n "${RECORD}" ]
+	then
+		RECORDING_FILE="recording-$(date +%Y-%m-%d-%H%M%S).ts"
+		echo "Recoding to file ${RECORDING_FILE}"
+		echo_verbose "Record URL: ${PLAY_URL}"
+		ffmpeg \
+		  -user_agent "${USER_AGENT}" \
+		  -i "${PLAY_URL}" \
+		  -acodec copy \
+		  -vcodec copy \
+		  "${RECORDING_FILE}"
+	else
+		echo "Playing..."
+		echo_verbose "Play URL: ${PLAY_URL}"
+		mpv \
+		  --user-agent="${USER_AGENT}" \
+		  --demuxer-lavf-o=live_start_index=-99999 \
+		  $MPV_VERBOSE_PARAMS \
+		  --force-seekable=yes \
+		  "${PLAY_URL}"
+	fi
 
 	# Reset prompt
 	PS3='Select channel: '
