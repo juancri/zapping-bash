@@ -4,6 +4,7 @@ print_help() {
 	echo "Arguments:"
 	echo " -h or --help: Prints this message"
 	echo " -v or --verbose: Prints verbose messages"
+	echo " -r or --record: Records the stream to a file instead of playing"
 }
 
 # Read arguments
