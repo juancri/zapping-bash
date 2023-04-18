@@ -56,26 +56,30 @@ esac
 if ! command -v mpv &> /dev/null
 then
 	echo "This script requires mpv"
-	exit
+	MISSING_DEPS=1
 fi
 if ! command -v jq &> /dev/null
 then
 	echo "This script requires jq"
-	exit
+	MISSING_DEPS=1
 fi
 if ! command -v http &> /dev/null
 then
 	echo "This script requires HTTPie"
-	exit
+	MISSING_DEPS=1
 fi
 if ! command -v uuidgen &> /dev/null
 then
 	echo "This script requires uuidgen"
-	exit
+	MISSING_DEPS=1
 fi
 if [ -n "${RECORD}" ] && ! command -v ffmpeg &> /dev/null
 then
 	echo "This script requires ffmpeg to record"
+	MISSING_DEPS=1
+fi
+if [ -n "${MISSING_DEPS}" ]
+then
 	exit
 fi
 
