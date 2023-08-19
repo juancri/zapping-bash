@@ -261,6 +261,7 @@ do
 		echo_verbose "Record URL: ${PLAY_URL}"
 		ffmpeg \
 		  -user_agent "${USER_AGENT}" \
+		  -live_start_index -99999 \
 		  -i "${PLAY_URL}" \
 		  -acodec copy \
 		  -vcodec copy \
