@@ -134,11 +134,14 @@ then
 	ZAPPING_TOKEN=$(cat "${CONFIG_FILE}")
 fi
 
+# Set UUID
+UUID=$(uuidgen)
+echo_verbose "UUID: ${UUID}"
+
 if [ -z "$ZAPPING_TOKEN" ];
 then
 	# Login
 	echo "Logging in..."
-	UUID=$(uuidgen)
 	GETCODE_RESPONSE=$(http -f \
 	  https://meteoro.zappingtv.com/activation/V20/androidtv/getcode \
 	  uuid="${UUID}" \
@@ -163,18 +166,6 @@ then
 	echo "Saving token to ${CONFIG_FILE}..."
 	echo "${ZAPPING_TOKEN}" > "${CONFIG_FILE}"
 fi
-
-# Get play token
-echo "Getting play token..."
-UUID=$(uuidgen)
-echo_verbose "UUID: ${UUID}"
-DRHOUSE_RESPONSE=$(http -f \
-  https://drhouse.zappingtv.com/login/V20/androidtv/ \
-  token="${ZAPPING_TOKEN}" \
-  uuid="${UUID}" \
-  User-Agent:"${USER_AGENT}")
-PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
-echo_verbose "Play token: ${PLAY_TOKEN}"
 
 # Get channel list
 echo "Getting channel list..."
@@ -236,11 +227,15 @@ do
 			;;
 	esac
 
-	# Send heartbeat
-	echo "Sending heartbeat..."
-	http -f https://drhouse.zappingtv.com/hb/v1/androidtv/ \
-	  playtoken="${PLAY_TOKEN}" \
-	  User-Agent:"${USER_AGENT}" > /dev/null
+	# Get play token
+	echo "Getting play token..."
+	DRHOUSE_RESPONSE=$(http -f \
+	https://drhouse.zappingtv.com/login/V20/androidtv/ \
+	token="${ZAPPING_TOKEN}" \
+	uuid="${UUID}" \
+	User-Agent:"${USER_AGENT}")
+	PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
+	echo_verbose "Play token: ${PLAY_TOKEN}"
 
 	# Play
 	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
