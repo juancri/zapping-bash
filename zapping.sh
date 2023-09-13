@@ -168,6 +168,7 @@ then
 fi
 
 # Get channel list
+echo_verbose "Zapping token: $ZAPPING_TOKEN"
 echo "Getting channel list..."
 CHANNEL_LIST_RESPONSE=$(http -f \
   https://alquinta.zappingtv.com/v20/androidtv/channelswithurl/ \
