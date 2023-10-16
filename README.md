@@ -56,6 +56,12 @@ Corre el script desde el terminal:
 
 La primera vez que se ejecute, el script generará un código para ser asociado a una cuenta como si fuera un televisor. Sigue las instrucciones en pantalla. El script guardará el token de Zapping en el archivo `$HOME/.config/zapping`.
 
+Es posible reproducir un canal automáticamente pasando su nombre como parámetro. Por ejemplo:
+
+```bash
+./zapping.sh "CNN Internacional"
+```
+
 ## Parámetros
 
 El script soporta los siguientes parámetros opcionales:
