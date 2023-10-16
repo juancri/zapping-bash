@@ -23,14 +23,14 @@ while [[ $# -gt 0 ]]; do
 			exit
 			;;
 		*)
-			echo "Unknown argument: $1"
-			print_help
-			exit
+			AUTO_CHANNEL=$1
+			shift
 			;;
 	esac
 done
 echo "verbose: ${VERBOSE}"
 echo "Record: ${RECORD}"
+echo "Auto channel: $AUTO_CHANNEL"
 
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
@@ -167,6 +167,64 @@ then
 	echo "${ZAPPING_TOKEN}" > "${CONFIG_FILE}"
 fi
 
+# Play function
+play_or_record() {
+	# Get play token
+	echo "Getting play token..."
+	echo http -f \
+		https://drhouse.zappingtv.com/login/V20/androidtv/ \
+		token="${ZAPPING_TOKEN}" \
+		uuid="${UUID}" \
+		User-Agent:"${USER_AGENT}"
+	DRHOUSE_RESPONSE=$(http -f \
+		https://drhouse.zappingtv.com/login/V20/androidtv/ \
+		token="${ZAPPING_TOKEN}" \
+		uuid="${UUID}" \
+		User-Agent:"${USER_AGENT}")
+	PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
+	echo_verbose "Play token: ${PLAY_TOKEN}"
+
+	# Play
+	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
+	PLAY_URL="${PLAY_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
+	if [ -n "${START_TIME}" ]
+	then
+		PLAY_URL="${PLAY_URL}&startTime=${START_TIME}"
+	fi
+	if [ -n "${END_TIME}" ]
+	then
+		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
+	fi
+	MPV_VERBOSE_PARAMS=""
+	if [ -n "${VERBOSE}" ]
+	then
+		MPV_VERBOSE_PARAMS="-v"
+	fi
+
+	if [ -n "${RECORD}" ]
+	then
+		RECORDING_FILE="recording-$(date +%Y-%m-%d-%H%M%S).ts"
+		echo "Recoding to file ${RECORDING_FILE}"
+		echo_verbose "Record URL: ${PLAY_URL}"
+		ffmpeg \
+		  -user_agent "${USER_AGENT}" \
+		  -live_start_index -99999 \
+		  -i "${PLAY_URL}" \
+		  -acodec copy \
+		  -vcodec copy \
+		  "${RECORDING_FILE}"
+	else
+		echo "Playing..."
+		echo_verbose "Play URL: ${PLAY_URL}"
+		mpv \
+		  --user-agent="${USER_AGENT}" \
+		  --demuxer-lavf-o=live_start_index=-99999 \
+		  $MPV_VERBOSE_PARAMS \
+		  --force-seekable=yes \
+		  "${PLAY_URL}"
+	fi
+}
+
 # Get channel list
 echo_verbose "Zapping token: $ZAPPING_TOKEN"
 echo "Getting channel list..."
@@ -177,6 +235,14 @@ CHANNEL_LIST_RESPONSE=$(http -f \
   is3g=0 \
   token="${ZAPPING_TOKEN}" \
   User-Agent:"${USER_AGENT}")
+
+# Auto play?
+if [ -n "${AUTO_CHANNEL}" ]
+then
+	echo "Playing channel automatically: ${AUTO_CHANNEL}"
+	CHANNEL_NAME="${AUTO_CHANNEL}"
+	play_or_record
+fi
 
 # Choose channel
 declare CHANNEL_NAMES
@@ -228,55 +294,7 @@ do
 			;;
 	esac
 
-	# Get play token
-	echo "Getting play token..."
-	DRHOUSE_RESPONSE=$(http -f \
-	https://drhouse.zappingtv.com/login/V20/androidtv/ \
-	token="${ZAPPING_TOKEN}" \
-	uuid="${UUID}" \
-	User-Agent:"${USER_AGENT}")
-	PLAY_TOKEN=$(echo "${DRHOUSE_RESPONSE}" | jq -r .data.playToken)
-	echo_verbose "Play token: ${PLAY_TOKEN}"
-
-	# Play
-	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
-	PLAY_URL="${PLAY_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
-	if [ -n "${START_TIME}" ]
-	then
-		PLAY_URL="${PLAY_URL}&startTime=${START_TIME}"
-	fi
-	if [ -n "${END_TIME}" ]
-	then
-		PLAY_URL="${PLAY_URL}&endTime=${END_TIME}"
-	fi
-	MPV_VERBOSE_PARAMS=""
-	if [ -n "${VERBOSE}" ]
-	then
-		MPV_VERBOSE_PARAMS="-v"
-	fi
-
-	if [ -n "${RECORD}" ]
-	then
-		RECORDING_FILE="recording-$(date +%Y-%m-%d-%H%M%S).ts"
-		echo "Recoding to file ${RECORDING_FILE}"
-		echo_verbose "Record URL: ${PLAY_URL}"
-		ffmpeg \
-		  -user_agent "${USER_AGENT}" \
-		  -live_start_index -99999 \
-		  -i "${PLAY_URL}" \
-		  -acodec copy \
-		  -vcodec copy \
-		  "${RECORDING_FILE}"
-	else
-		echo "Playing..."
-		echo_verbose "Play URL: ${PLAY_URL}"
-		mpv \
-		  --user-agent="${USER_AGENT}" \
-		  --demuxer-lavf-o=live_start_index=-99999 \
-		  $MPV_VERBOSE_PARAMS \
-		  --force-seekable=yes \
-		  "${PLAY_URL}"
-	fi
+	play_or_record
 
 	# Reset prompt
 	PS3='Select channel: '
