@@ -242,6 +242,7 @@ then
 	echo "Playing channel automatically: ${AUTO_CHANNEL}"
 	CHANNEL_NAME="${AUTO_CHANNEL}"
 	play_or_record
+	exit
 fi
 
 # Choose channel
