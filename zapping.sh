@@ -5,6 +5,7 @@ print_help() {
 	echo " -h or --help: Prints this message"
 	echo " -v or --verbose: Prints verbose messages"
 	echo " -r or --record: Records the stream to a file instead of playing"
+	echo " \"channel name\": Auto-plays the channel by its name"
 }
 
 # Read arguments
