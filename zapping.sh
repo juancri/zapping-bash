@@ -186,7 +186,7 @@ play_or_record() {
 	echo_verbose "Play token: ${PLAY_TOKEN}"
 
 	# Play
-	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .url")
+	PLAY_URL=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select((.number|tostring) + \" - \" + .name == \"${CHANNEL_NAME}\") | .url")
 	PLAY_URL="${PLAY_URL}?token=${PLAY_TOKEN}${PLAY_EXTRA}"
 	if [ -n "${START_TIME}" ]
 	then
@@ -248,7 +248,7 @@ fi
 
 # Choose channel
 declare CHANNEL_NAMES
-to_array CHANNEL_NAMES <<< "$(echo "${CHANNEL_LIST_RESPONSE}" | jq '(.data[])' | jq -r .name | sort)"
+to_array CHANNEL_NAMES <<< "$(echo "${CHANNEL_LIST_RESPONSE}" | jq '(.data[])' | jq -r '(.number|tostring) + " - " + .name' | sort -V)"
 PS3='Select channel: '
 select CHANNEL_NAME in "${CHANNEL_NAMES[@]}"
 do
