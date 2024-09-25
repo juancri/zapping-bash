@@ -36,6 +36,7 @@ echo "Auto channel: $AUTO_CHANNEL"
 # Constants
 CONFIG_FILE="${HOME}/.config/zapping"
 USER_AGENT="Zapping/bash-1.0"
+HTTPIE_OPTIONS=(--verify=/etc/ssl/certs/ca-bundle.crt)
 
 # Check dependencies
 case $OSTYPE in
@@ -144,6 +145,7 @@ then
 	# Login
 	echo "Logging in..."
 	GETCODE_RESPONSE=$(http -f \
+	  "${HTTPIE_OPTIONS[@]}" \
 	  https://meteoro.zappingtv.com/activation/V20/androidtv/getcode \
 	  uuid="${UUID}" \
 	  acquisition="Android TV" \
@@ -156,6 +158,7 @@ then
 	# Check code
 	echo "Checking if the code is linked..."
 	CHECKCODE_RESPONSE=$(http -f \
+	  "${HTTPIE_OPTIONS[@]}" \
 	  https://meteoro.zappingtv.com/activation/V20/androidtv/linked \
 	  code="${CODE}" \
 	  User-Agent:"${USER_AGENT}")
@@ -173,11 +176,13 @@ play_or_record() {
 	# Get play token
 	echo "Getting play token..."
 	echo http -f \
+		"${HTTPIE_OPTIONS[@]}" \
 		https://drhouse.zappingtv.com/login/V20/androidtv/ \
 		token="${ZAPPING_TOKEN}" \
 		uuid="${UUID}" \
 		User-Agent:"${USER_AGENT}"
 	DRHOUSE_RESPONSE=$(http -f \
+		"${HTTPIE_OPTIONS[@]}" \
 		https://drhouse.zappingtv.com/login/V20/androidtv/ \
 		token="${ZAPPING_TOKEN}" \
 		uuid="${UUID}" \
@@ -230,6 +235,7 @@ play_or_record() {
 echo_verbose "Zapping token: $ZAPPING_TOKEN"
 echo "Getting channel list..."
 CHANNEL_LIST_RESPONSE=$(http -f \
+  "${HTTPIE_OPTIONS[@]}" \
   https://alquinta.zappingtv.com/v20/androidtv/channelswithurl/ \
   quality=auto \
   hevc=1 \
@@ -262,6 +268,7 @@ do
 			echo "Getting catchup data..."
 			CHANNEL_IMAGE=$(echo "${CHANNEL_LIST_RESPONSE}" | jq -r ".data[] | select(.name == \"${CHANNEL_NAME}\") | .image")
 			CATCHUP_RESPONSE=$(http POST \
+			  "${HTTPIE_OPTIONS[@]}" \
 			  "https://charly.zappingtv.com/v3.1/androidtv/${CHANNEL_IMAGE}/catchup/0/live")
 			declare SECTION_NAMES
 			to_array SECTION_NAMES <<< "$(echo "${CATCHUP_RESPONSE}" | jq -r .data[].title)"
