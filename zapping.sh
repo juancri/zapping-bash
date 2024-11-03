@@ -126,6 +126,22 @@ echo_verbose() {
 	fi
 }
 
+ping_drhouse() {
+	while true
+	do
+		echo
+		echo "Pinging drhouse..."
+		http --verify=no --form --ignore-stdin \
+		  https://drhouse.zappingtv.com/hb/V20/androidtv/ \
+		  User-Agent:"${USER_AGENT}" \
+		  Content-Type:"application/x-www-form-urlencoded; charset=UTF-8" \
+		  playtoken="$1" \
+		  uuid="${UUID}" \
+		  deviceInfo="{}" > /dev/null
+		sleep 25
+	done
+}
+
 # Export functions
 export -f timestamp_to_hh_mm
 
@@ -202,6 +218,10 @@ play_or_record() {
 		MPV_VERBOSE_PARAMS="-v"
 	fi
 
+	ping_drhouse "${PLAY_TOKEN}" &
+	PING_DRHOUSE_PID=$!
+	echo "PID ping ${PING_DRHOUSE_PID}"
+
 	if [ -n "${RECORD}" ]
 	then
 		RECORDING_FILE="recording-$(date +%Y-%m-%d-%H%M%S).ts"
@@ -224,6 +244,8 @@ play_or_record() {
 		  --force-seekable=yes \
 		  "${PLAY_URL}"
 	fi
+
+	kill $PING_DRHOUSE_PID
 }
 
 # Get channel list
